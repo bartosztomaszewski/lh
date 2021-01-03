@@ -7,7 +7,7 @@ import time
 
 
 def choose_file():
-    print('Choose a prepared .txt file with accounts list.\n')
+    print('Choose a prepared .txt file with list of accounts.\n')
 
     root = tk.Tk()
     root.withdraw()
@@ -37,87 +37,143 @@ def extract_data(file_path):
     return accounts_dict
 
 def sort_data(accounts_dict):
-    used_space = 0
     all_space = 0
-    tmp = ''
-    tmp_used = ''
+    used_space = 0
+    users_counter = 0
+
     tmp_all = ''
+    tmp_used = ''
+    tmp_values = ''
+    
+    for username, values in accounts_dict.items():
+        tmp_values = values.split('/')
 
-    for username, space in accounts_dict.items():
-        tmp = space.split('/')
-
-        tmp_used = tmp[0]
+        tmp_used = tmp_values[0]
         tmp_used = tmp_used.split()
 
-        tmp_all = tmp[1]
+        tmp_all = tmp_values[1]
         tmp_all = tmp_all.split()
 
         used_space += D(tmp_used[0])
         all_space += D(tmp_all[0])
 
+        users_counter += 1
+
         accounts_dict[username] = [float(tmp_used[0]), float(tmp_all[0]), float(D(tmp_all[0])-D(tmp_used[0]))]
 
-    accounts_free_dict = {}
-    accounts_all_dict = {}
-    for username, space in accounts_dict.items():
-        #print('Email {EMAIL}\nfree: {FREE}\nused: {USED}\ntotal: {ALL}\n'.format(EMAIL=username, FREE=space[2], USED=space[0], ALL=space[1]))
-        accounts_free_dict[space[2]] = [username, space[0], space[1]]
-        accounts_all_dict[space[1]] = [username, space[0], space[2]]
-    return accounts_free_dict, accounts_all_dict, used_space, all_space
+    return used_space, all_space, users_counter, accounts_dict
 
-#with open('test3.txt', 'w') as testing:
-    #for i in sorted (accounts_free_dict, reverse=True):
-        #testing.write('Email {EMAIL}\nfree: {FREE}\nused: {USED}\ntotal: {ALL}\n'.format(EMAIL=accounts_free_dict[i][0], FREE=i, USED=accounts_free_dict[i][1], ALL=accounts_free_dict[i][2]))
-    #print('Email {EMAIL}\nfree: {FREE}\nused: {USED}\ntotal: {ALL}\n'.format(EMAIL=accounts_free_dict[i][0], FREE=i, USED=accounts_free_dict[i][1], ALL=accounts_free_dict[i][2]))
+def show_menu(used_space, all_space, users_counter, accounts_dict):
 
-#print('We have {USED} MB used space on users\' accounts.\nWe have {ALL} MB assigned to users\' accounts.\nWe have {AVA} MB free space on users\' accounts.\n'.format(USED=used_space, ALL=all_space, AVA=all_space-used_space))
-def show_menu(*accounts_dicts):
-    #print(accounts_dicts[1])
-    accounts_free_dict = accounts_dicts[0]
-    accounts_all_dict = accounts_dicts[1]
     choice = ''
     while choice != 'q':
-        print('We have {USED} MB used space on users\' accounts.\nWe have {ALL} MB assigned to users\' accounts.\nWe have {AVA} MB free space on users\' accounts.\n'.format(USED=used_space, ALL=all_space, AVA=all_space-used_space))
-        print("Menu:\n1 - List 5 users with the most available free space\n2 - Save all users to file in order of available free space\n3 - List 5 users with the biggest quota\n4 - Save all users to file i order of quota size\nq - exit program\n(file will be saved in this same directory that running program)")
+        print('We have {USERS} users.\nWe have {USED} MB of used space on users\' accounts.\nWe have {ALL} MB of assigned to users\' accounts.\nWe have {AVA} MB of free space on users\' accounts.\n'.format(USERS=users_counter, USED=used_space, ALL=all_space, AVA=all_space-used_space))
+        print("Menu:\n1 - List 5 users with the most available free space\n2 - Save all users to file in order of available free space\n3 - List 5 users with the biggest quota\n4 - Save all users to file in order of quota size\nq - exit program\n(file will be saved in this same directory that running program)")
         choice = input('--> ')
         if choice == '1':
             os.system('cls')
             counter = 0
-            for i in sorted (accounts_free_dict, reverse=True):
-                print('Email {EMAIL}\nfree: {FREE}\nused: {USED}\ntotal: {ALL}\n'.format(EMAIL=accounts_free_dict[i][0], FREE=i, USED=accounts_free_dict[i][1], ALL=accounts_free_dict[i][2]))
+            accounts_dict_tmp = dict(accounts_dict)
+
+            while counter < 5:
+                most_free_space = 0
+                email = ''
+                all_space_tmp = 0
+                used_space_tmp = 0
+                for username, values in accounts_dict_tmp.items():
+                    if values[2] > most_free_space:
+                        most_free_space = values[2]
+                        email = username
+                        all_space_tmp = values[1]
+                        used_space_tmp = values[0]
+                print('Email {EMAIL}\nfree: {FREE}\nused: {USED}\ntotal: {ALL}\n'.format(EMAIL=email, FREE=most_free_space, USED=used_space_tmp, ALL=all_space_tmp))
+                accounts_dict_tmp.pop(email)
                 counter += 1
-                if counter >= 5:
-                    break 
+
         elif choice == '2':
             os.system('cls')
             timestr = time.strftime("%Y%m%d-%H%M%S")
-            with open('mails-' + timestr + '.txt', 'w') as mails:
-                for i in sorted (accounts_free_dict, reverse=True):
-                    mails.write('Email {EMAIL}\nfree: {FREE}\nused: {USED}\ntotal: {ALL}\n\n'.format(EMAIL=accounts_free_dict[i][0], FREE=i, USED=accounts_free_dict[i][1], ALL=accounts_free_dict[i][2]))
-            print('File \'mails-' + timestr + '.txt\' saved!\n')
+            counter = 0
+            accounts_dict_tmp = dict(accounts_dict)
+
+            with open('free_space_mails-' + timestr + '.txt', 'w') as mails:
+                while counter < users_counter:
+                    email = ''
+                    most_free_space = 0
+                    for username, values in accounts_dict_tmp.items():
+                        if email == '':
+                            most_free_space = values[2]
+                            email = username
+                            all_space_tmp = values[1]
+                            used_space_tmp = values[0]
+                        if values[2] > most_free_space:
+                            most_free_space = values[2]
+                            email = username
+                            all_space_tmp = values[1]
+                            used_space_tmp = values[0]
+                    mails.write('Email {EMAIL}\nfree: {FREE}\nused: {USED}\ntotal: {ALL}\n\n'.format(EMAIL=email, FREE=most_free_space, USED=used_space_tmp, ALL=all_space_tmp))
+                    accounts_dict_tmp.pop(email)
+                    counter += 1
+
+            print('File \'free_space_mails-' + timestr + '.txt\' saved!\n')
+
         elif choice == '3':
             os.system('cls')
+
             counter = 0
-            for i in sorted (accounts_all_dict, reverse=True):
-                print('Email {EMAIL}\nfree: {FREE}\nused: {USED}\ntotal: {ALL}\n'.format(EMAIL=accounts_all_dict[i][0], FREE=accounts_all_dict[i][2], USED=accounts_all_dict[i][1], ALL=i))
+            accounts_dict_tmp = dict(accounts_dict)
+
+            while counter < 5:
+                most_free_space = 0
+                email = ''
+                all_space_tmp = 0
+                used_space_tmp = 0
+                for username, values in accounts_dict_tmp.items():
+                    if values[1] > all_space_tmp:
+                        most_free_space = values[2]
+                        email = username
+                        all_space_tmp = values[1]
+                        used_space_tmp = values[0]
+                print('Email {EMAIL}\nfree: {FREE}\nused: {USED}\ntotal: {ALL}\n'.format(EMAIL=email, FREE=most_free_space, USED=used_space_tmp, ALL=all_space_tmp))
+                accounts_dict_tmp.pop(email)
                 counter += 1
-                if counter >= 5:
-                    break 
+
         elif choice == '4':
             os.system('cls')
             timestr = time.strftime("%Y%m%d-%H%M%S")
-            with open('mails-' + timestr + '.txt', 'w') as mails:
-                for i in sorted (accounts_all_dict, reverse=True):
-                    mails.write('Email {EMAIL}\nfree: {FREE}\nused: {USED}\ntotal: {ALL}\n'.format(EMAIL=accounts_all_dict[i][0], FREE=accounts_all_dict[i][2], USED=accounts_all_dict[i][1], ALL=i))
-            print('File \'mails-' + timestr + '.txt\' saved!\n')
+            counter = 0
+            accounts_dict_tmp = dict(accounts_dict)
+
+            with open('total_space_mails-' + timestr + '.txt', 'w') as mails:
+                while counter < users_counter:
+                    email = ''
+                    all_space_tmp = 0
+                    for username, values in accounts_dict_tmp.items():
+                        if email == '':
+                            most_free_space = values[2]
+                            email = username
+                            all_space_tmp = values[1]
+                            used_space_tmp = values[0]
+                        if values[1] > all_space_tmp:
+                            most_free_space = values[2]
+                            email = username
+                            all_space_tmp = values[1]
+                            used_space_tmp = values[0]
+                    mails.write('Email {EMAIL}\nfree: {FREE}\nused: {USED}\ntotal: {ALL}\n\n'.format(EMAIL=email, FREE=most_free_space, USED=used_space_tmp, ALL=all_space_tmp))
+                    accounts_dict_tmp.pop(email)
+                    counter += 1
+
+            print('File \'total_space_mails-' + timestr + '.txt\' saved!\n')
+
+        elif choice == 'q':
+            break
         else:
             os.system('cls')
             print('Selected wrong option!\n')
-
 
 if __name__=="__main__":
     os.system('cls')
     file_path = choose_file()
     data = extract_data(file_path)
-    most_free_space, biggest_accounts, used_space, all_space = sort_data(data)
-    show_menu(most_free_space, biggest_accounts, used_space, all_space)
+    used_space, all_space, users_counter, accounts_dict= sort_data(data)
+    show_menu(used_space, all_space, users_counter, accounts_dict)
